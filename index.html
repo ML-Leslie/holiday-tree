@@ -101,8 +101,105 @@
       background: linear-gradient(180deg, #fff9e6 0%, #ffd97d 48%, #d4942a 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      filter: blur(8px) drop-shadow(0 0 12px rgba(255, 212, 110, 0.65))
+              drop-shadow(0 0 28px rgba(255, 180, 60, 0.35));
+      opacity: 0;
+      transform: translateY(14px) scale(0.94);
+      transition: opacity 1.5s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 1.5s cubic-bezier(0.22, 1, 0.36, 1),
+                  filter 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #title-xmas.revealed {
+      opacity: 1;
+      transform: translateY(0) scale(1);
       filter: drop-shadow(0 0 12px rgba(255, 212, 110, 0.65))
               drop-shadow(0 0 28px rgba(255, 180, 60, 0.35));
+    }
+
+    /* Intro Gift Overlay (Stage C: Tap to Open) */
+    #intro-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      background: radial-gradient(circle at 50% 48%, rgba(18, 28, 56, 0.36) 0%, rgba(2, 4, 12, 0.72) 100%);
+      cursor: pointer;
+      transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #intro-overlay.dismissed {
+      opacity: 0;
+      transform: scale(1.12);
+      pointer-events: none;
+    }
+
+    .gift-stage {
+      position: relative;
+      width: 126px;
+      height: 126px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: giftFloat 3.2s ease-in-out infinite;
+    }
+
+    .gift-halo {
+      position: absolute;
+      inset: -26px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 214, 110, 0.42) 0%, rgba(255, 180, 60, 0.12) 48%, rgba(0, 0, 0, 0) 72%);
+      animation: haloPulse 2.6s ease-in-out infinite;
+    }
+
+    .gift-svg {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      filter: drop-shadow(0 0 16px rgba(255, 212, 110, 0.68));
+    }
+
+    .intro-sub {
+      font-family: 'Great Vibes', 'Snell Roundhand', cursive;
+      font-size: clamp(1.85rem, 7vw, 2.5rem);
+      background: linear-gradient(180deg, #fff9e6 0%, #ffd97d 60%, #d4942a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 12px rgba(255, 212, 110, 0.55));
+      letter-spacing: 0.03em;
+    }
+
+    .intro-cta {
+      padding: 11px 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 224, 145, 0.52);
+      background: rgba(255, 214, 110, 0.14);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff4d2;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      box-shadow: 0 0 24px rgba(255, 200, 90, 0.24);
+      animation: ctaGlow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes giftFloat {
+      0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+      50% { transform: translateY(-10px) rotate(1.5deg); }
+    }
+
+    @keyframes haloPulse {
+      0%, 100% { transform: scale(0.92); opacity: 0.72; }
+      50% { transform: scale(1.12); opacity: 1; }
+    }
+
+    @keyframes ctaGlow {
+      0%, 100% { box-shadow: 0 0 18px rgba(255, 200, 90, 0.22); }
+      50% { box-shadow: 0 0 30px rgba(255, 216, 120, 0.48); }
     }
 
     /* Subtle Gesture / Action Feedback Toast */
@@ -297,7 +394,7 @@
       position: fixed;
       left: 50%;
       bottom: calc(var(--safe-bottom) + 16px);
-      transform: translateX(-50%);
+      transform: translateX(-50%) translateY(16px);
       z-index: 30;
       display: flex;
       flex-direction: column;
@@ -306,6 +403,13 @@
       width: max-content;
       max-width: calc(100vw - 24px);
       pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .control-dock-zone.revealed {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     .control-bar {
@@ -365,8 +469,11 @@
       .control-dock-zone {
         left: auto;
         right: 22px;
-        transform: none;
+        transform: translateY(16px);
         align-items: flex-end;
+      }
+      .control-dock-zone.revealed {
+        transform: translateY(0);
       }
       .control-bar {
         opacity: 0.32;
@@ -513,6 +620,42 @@
 
   <!-- 3D Scene Container -->
   <div id="canvas-container"></div>
+
+  <!-- Intro Tap-to-Open Gift Overlay -->
+  <div id="intro-overlay" role="button" aria-label="轻触点亮圣诞树">
+    <div class="gift-stage">
+      <div class="gift-halo"></div>
+      <svg class="gift-svg" viewBox="0 0 100 100" fill="none">
+        <defs>
+          <linearGradient id="giftGold" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#fff6d6" />
+            <stop offset="50%" stop-color="#ffd166" />
+            <stop offset="100%" stop-color="#d4942a" />
+          </linearGradient>
+          <linearGradient id="giftBox" x1="18" y1="36" x2="82" y2="88" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#c9184a" />
+            <stop offset="100%" stop-color="#7a0d2b" />
+          </linearGradient>
+        </defs>
+        <!-- Ribbon Bow -->
+        <path d="M50 34 C38 18, 22 22, 28 34 C32 40, 44 37, 50 34 Z" fill="url(#giftGold)" />
+        <path d="M50 34 C62 18, 78 22, 72 34 C68 40, 56 37, 50 34 Z" fill="url(#giftGold)" />
+        <!-- Lid -->
+        <rect x="16" y="34" width="68" height="14" rx="4" fill="url(#giftBox)" stroke="url(#giftGold)" stroke-width="1.8" />
+        <!-- Box Body -->
+        <rect x="21" y="48" width="58" height="38" rx="5" fill="url(#giftBox)" stroke="url(#giftGold)" stroke-width="1.8" />
+        <!-- Vertical & Horizontal Golden Ribbons -->
+        <rect x="44" y="34" width="12" height="52" fill="url(#giftGold)" />
+        <rect x="21" y="61" width="58" height="9" fill="url(#giftGold)" opacity="0.92" />
+        <!-- Sparkle Stars -->
+        <circle cx="15" cy="22" r="2.2" fill="#fff6d6" />
+        <circle cx="86" cy="26" r="1.8" fill="#ffd166" />
+        <circle cx="84" cy="78" r="2" fill="#fff6d6" />
+      </svg>
+    </div>
+    <div class="intro-sub">A Christmas Gift For You</div>
+    <div class="intro-cta">✨ 轻触点亮圣诞树</div>
+  </div>
 
   <!-- Centered Glowing Title -->
   <div class="title-stage">
@@ -739,6 +882,11 @@
       themeCurrent: 0,
       scatterTarget: 0,
       scatterCurrent: 0,
+
+      // Opening Sequence: 'WAIT' -> 'LIGHTING' -> 'DONE'
+      introStage: 'WAIT',
+      introStartTime: 0,
+      introReveal: 0,
 
       camYawTarget: 0,
       camYaw: 0,
@@ -1041,6 +1189,7 @@
           uScatter: { value: 0 },
           uTheme: { value: 0 },
           uDim: { value: 1.0 },
+          uReveal: { value: 0.0 },
           uPixelRatio: { value: Math.min(window.devicePixelRatio, isMobile ? 1.75 : 2) },
         },
         vertexShader: `
@@ -1055,6 +1204,7 @@
           uniform float uScatter;
           uniform float uTheme;
           uniform float uDim;
+          uniform float uReveal;
           uniform float uPixelRatio;
 
           varying vec3 vColor;
@@ -1067,6 +1217,10 @@
           }
 
           void main() {
+            float normY = clamp((position.y + 6.5) / 13.0, 0.0, 1.0);
+            float revealMask = smoothstep(normY - 0.06, normY + 0.03, uReveal);
+            float waveFlash = exp(-pow((uReveal - normY) * 14.0, 2.0)) * step(0.01, uReveal) * step(uReveal, 1.18);
+
             float s = clamp(uScatter, 0.0, 1.0);
             vec3 pos = mix(position, aScatterPos, s);
 
@@ -1081,12 +1235,13 @@
             gl_Position = projectionMatrix * mvPosition;
 
             float twinkle = 0.62 + 0.38 * sin(uTime * 2.8 + aPhase * 12.0);
-            float sizeScale = aSize * (0.85 + 0.28 * twinkle) * mix(1.0, 1.22, s);
+            float sizeScale = aSize * (0.85 + 0.28 * twinkle + waveFlash * 0.85) * mix(1.0, 1.22, s) * revealMask;
             gl_PointSize = sizeScale * uPixelRatio * (76.0 / max(-mvPosition.z, 1.5));
 
             vec3 baseCol = mix(aColorXmas, aColorCNY, uTheme);
-            vColor = baseCol * aBoost * (0.82 + 0.3 * twinkle) * uDim;
-            vAlpha = (0.50 + 0.28 * twinkle) * mix(0.95, 0.72, 1.0 - uDim);
+            vec3 ignitedCol = mix(baseCol, vec3(1.0, 0.88, 0.55), waveFlash * 0.72);
+            vColor = ignitedCol * (aBoost + waveFlash * 1.1) * (0.82 + 0.3 * twinkle) * uDim;
+            vAlpha = (0.50 + 0.28 * twinkle) * mix(0.95, 0.72, 1.0 - uDim) * revealMask;
           }
         `,
         fragmentShader: `
@@ -1142,6 +1297,7 @@
             uTime: { value: 0 },
             uScatter: { value: 0 },
             uDim: { value: 1.0 },
+            uReveal: { value: 0.0 },
             uColA: { value: new THREE.Color(cfg.colA) },
             uColB: { value: new THREE.Color(cfg.colB) },
             uPhase: { value: cfg.phase },
@@ -1157,18 +1313,20 @@
             uniform float uTime;
             uniform float uScatter;
             uniform float uDim;
+            uniform float uReveal;
             uniform vec3 uColA;
             uniform vec3 uColB;
             uniform float uPhase;
             varying vec2 vUv;
 
             void main() {
+              float revealMask = smoothstep(vUv.x - 0.04, vUv.x + 0.02, uReveal);
               float flow1 = smoothstep(0.0, 1.0, sin((vUv.x * 18.0 - uTime * 2.2 + uPhase)) * 0.5 + 0.5);
               float comet = pow(fract(vUv.x * 2.0 - uTime * 0.24 + uPhase * 0.15), 6.0);
               float edgeFade = smoothstep(0.0, 0.08, vUv.x) * smoothstep(1.0, 0.92, vUv.x);
 
               vec3 col = mix(uColA, uColB, flow1) * (0.62 + comet * 1.15) * uDim;
-              float alpha = (0.14 + 0.22 * flow1 + 0.42 * comet) * edgeFade * (1.0 - uScatter * 0.92);
+              float alpha = (0.14 + 0.22 * flow1 + 0.42 * comet) * edgeFade * (1.0 - uScatter * 0.92) * revealMask;
               gl_FragColor = vec4(col, alpha);
             }
           `,
@@ -1369,6 +1527,144 @@
     const spiralRibbons = createSpiralRibbons();
     const baseAura = createBaseAuraPedestal();
     const fallingSnow = createFallingSnow();
+
+    /* =========================================================================
+       4.6 INTRO SHOOTING-STAR COMET & MUSIC-BOX CHIME SYNTHESIZER
+       ========================================================================= */
+    function createIntroComet() {
+      const group = new THREE.Group();
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(64, 64, 2, 64, 64, 64);
+      g.addColorStop(0, 'rgba(255, 255, 240, 1.0)');
+      g.addColorStop(0.25, 'rgba(255, 224, 130, 0.85)');
+      g.addColorStop(0.6, 'rgba(255, 175, 65, 0.28)');
+      g.addColorStop(1, 'rgba(255, 140, 20, 0.0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 128, 128);
+
+      const tex = new THREE.CanvasTexture(c);
+      const headMat = new THREE.SpriteMaterial({
+        map: tex,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const head = new THREE.Sprite(headMat);
+      head.scale.set(2.8, 2.8, 1);
+      group.add(head);
+
+      const trail = [];
+      for (let i = 0; i < 18; i++) {
+        const m = new THREE.SpriteMaterial({
+          map: tex,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        const sp = new THREE.Sprite(m);
+        const s = 1.6 * (1 - i / 20);
+        sp.scale.set(s, s, 1);
+        group.add(sp);
+        trail.push({ sp, m });
+      }
+      worldGroup.add(group);
+      return { group, head, headMat, trail };
+    }
+
+    const introComet = createIntroComet();
+
+    // Synthesize a delicate crystalline music-box Christmas chime via Web Audio API
+    function playMusicBoxIntro() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime + 0.04;
+
+        // Sparkling opening chime + "We Wish You a Merry Christmas" music-box motif
+        const notes = [
+          // Sparkle glissando
+          { f: 523.25, t: 0.00, d: 0.9, v: 0.06 },
+          { f: 659.25, t: 0.08, d: 0.9, v: 0.06 },
+          { f: 783.99, t: 0.16, d: 1.0, v: 0.07 },
+          { f: 1046.5, t: 0.25, d: 1.3, v: 0.08 },
+          // Motif: D5 G5 G5 A5 G5 F#5 E5 E5 | E5 A5 A5 B5 A5 G5 F#5 D5 | D5 B5 B5 C6 B5 A5 G5
+          { f: 587.33, t: 0.60, d: 0.55, v: 0.08 },
+          { f: 783.99, t: 0.92, d: 0.55, v: 0.09 },
+          { f: 783.99, t: 1.24, d: 0.30, v: 0.07 },
+          { f: 880.00, t: 1.42, d: 0.30, v: 0.08 },
+          { f: 783.99, t: 1.60, d: 0.30, v: 0.08 },
+          { f: 739.99, t: 1.78, d: 0.32, v: 0.07 },
+          { f: 659.25, t: 1.98, d: 0.55, v: 0.08 },
+          { f: 659.25, t: 2.30, d: 0.55, v: 0.07 },
+          // Star apex shimmer chord (G major + sparkle)
+          { f: 783.99, t: 2.75, d: 2.1, v: 0.08 },
+          { f: 987.77, t: 2.82, d: 2.1, v: 0.07 },
+          { f: 1174.66, t: 2.90, d: 2.2, v: 0.07 },
+          { f: 1567.98, t: 2.98, d: 2.4, v: 0.06 },
+        ];
+
+        notes.forEach((n) => {
+          const osc = ctx.createOscillator();
+          const overtone = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          overtone.type = 'triangle';
+          osc.frequency.setValueAtTime(n.f, now + n.t);
+          overtone.frequency.setValueAtTime(n.f * 2.0, now + n.t);
+
+          const ovGain = ctx.createGain();
+          ovGain.gain.setValueAtTime(0.18, now + n.t);
+
+          gain.gain.setValueAtTime(0.0001, now + n.t);
+          gain.gain.exponentialRampToValueAtTime(n.v, now + n.t + 0.018);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + n.t + n.d);
+
+          osc.connect(gain);
+          overtone.connect(ovGain);
+          ovGain.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + n.t);
+          overtone.start(now + n.t);
+          osc.stop(now + n.t + n.d + 0.05);
+          overtone.stop(now + n.t + n.d + 0.05);
+        });
+      } catch (_) {}
+    }
+
+    const introOverlay = document.getElementById('intro-overlay');
+    const titleXmasEl = document.getElementById('title-xmas');
+    const controlDockEl = document.querySelector('.control-dock-zone');
+
+    function startOpeningAnimation() {
+      if (state.introStage !== 'WAIT') return;
+      state.introStage = 'LIGHTING';
+      state.introStartTime = clock.elapsedTime;
+      state.introReveal = 0;
+
+      // Start camera slightly closer & offset for a sweeping cinematic reveal
+      state.camYaw = -1.65;
+      state.camYawTarget = 0;
+      state.camPitch = -0.06;
+      state.camPitchTarget = 0.08;
+      state.camDist = getDefaultCamDist() * 1.18;
+      state.camDistTarget = getDefaultCamDist();
+
+      playMusicBoxIntro();
+      introOverlay.classList.add('dismissed');
+    }
+
+    introOverlay.addEventListener('click', startOpeningAnimation);
+    introOverlay.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      startOpeningAnimation();
+    }, { passive: false });
 
     /* =========================================================================
        5. TREE TOPPER: 3D GLOWING STAR & CNY STARBURST
@@ -2779,6 +3075,64 @@
       bgStardust.mat.uniforms.uTime.value = elapsed;
       bgStardust.mat.uniforms.uTheme.value = state.themeCurrent;
 
+      // Opening sequence progression ('WAIT' -> 'LIGHTING' -> 'DONE')
+      let starFlashBoost = 0;
+      if (state.introStage === 'WAIT') {
+        state.introReveal = 0;
+        introComet.headMat.opacity = 0;
+        for (let i = 0; i < introComet.trail.length; i++) introComet.trail[i].m.opacity = 0;
+      } else if (state.introStage === 'LIGHTING') {
+        const introDur = 3.2;
+        const p = Math.min((elapsed - state.introStartTime) / introDur, 1.0);
+        // Smooth ease-in-out curve for comet spiral ascent
+        const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+        state.introReveal = eased * 1.15;
+
+        // Position shooting-star comet & its 18-point spiral trail
+        const cometT = Math.min(eased / 0.88, 1.0);
+        const cometFade = p < 0.85 ? 1.0 : Math.max(0, 1.0 - (p - 0.85) / 0.15);
+        const cY = -6.5 + cometT * 13.45;
+        const cR = 5.35 * Math.pow(Math.max(0, 1.0 - cometT), 0.92) + 0.25;
+        const cA = cometT * Math.PI * 2 * 4.5;
+        introComet.head.position.set(Math.cos(cA) * cR, cY, Math.sin(cA) * cR);
+        introComet.headMat.opacity = cometFade;
+
+        for (let i = 0; i < introComet.trail.length; i++) {
+          const tt = Math.max(0, cometT - (i + 1) * 0.011);
+          const ty = -6.5 + tt * 13.45;
+          const tr = 5.35 * Math.pow(Math.max(0, 1.0 - tt), 0.92) + 0.25;
+          const ta = tt * Math.PI * 2 * 4.5;
+          introComet.trail[i].sp.position.set(Math.cos(ta) * tr, ty, Math.sin(ta) * tr);
+          introComet.trail[i].m.opacity = cometFade * (1 - i / introComet.trail.length) * 0.72;
+        }
+
+        // Apex star ignition flash when comet reaches top
+        if (p >= 0.80) {
+          starFlashBoost = Math.sin(((p - 0.80) / 0.20) * Math.PI) * 1.4;
+        }
+        if (p >= 0.70) titleXmasEl.classList.add('revealed');
+        if (p >= 0.92) controlDockEl.classList.add('revealed');
+
+        if (p >= 1.0) {
+          state.introStage = 'DONE';
+          state.introReveal = 1.25;
+          introComet.headMat.opacity = 0;
+          for (let i = 0; i < introComet.trail.length; i++) introComet.trail[i].m.opacity = 0;
+          titleXmasEl.classList.add('revealed');
+          controlDockEl.classList.add('revealed');
+          setTimeout(() => {
+            showToast(
+              isMobile
+                ? '✨ 单指旋转 · 双指放大自动散开 · 散开后单击看拍立得'
+                : '✨ 拖拽旋转 · 滚轮/Space 散开星云 · 单击查看拍立得',
+              3400
+            );
+          }, 500);
+        }
+      } else {
+        state.introReveal = 1.25;
+      }
+
       const focusDimTarget = state.activePhotoIndex !== -1 ? 0.52 : 1.0;
       particleTree.mat.uniforms.uDim.value = THREE.MathUtils.lerp(
         particleTree.mat.uniforms.uDim.value,
@@ -2788,6 +3142,7 @@
       particleTree.mat.uniforms.uTime.value = elapsed;
       particleTree.mat.uniforms.uScatter.value = state.scatterCurrent;
       particleTree.mat.uniforms.uTheme.value = state.themeCurrent;
+      particleTree.mat.uniforms.uReveal.value = state.introReveal;
 
       // Update flowing spiral light ribbons, star-ring pedestal & falling snow
       const dimVal = particleTree.mat.uniforms.uDim.value;
@@ -2796,30 +3151,46 @@
         rb.mat.uniforms.uTime.value = elapsed;
         rb.mat.uniforms.uScatter.value = state.scatterCurrent;
         rb.mat.uniforms.uDim.value = dimVal;
+        rb.mat.uniforms.uReveal.value = state.introReveal;
         rb.mesh.scale.setScalar(1.0 + state.scatterCurrent * 0.55);
       }
 
-      const auraVis = Math.max(0, 1.0 - state.scatterCurrent * 1.25) * dimVal;
+      const baseReveal = THREE.MathUtils.clamp(state.introReveal * 4.5, 0, 1);
+      const auraVis = Math.max(0, 1.0 - state.scatterCurrent * 1.25) * dimVal * baseReveal;
       baseAura.floorMat.opacity = 0.32 * auraVis;
       baseAura.ringMat.uniforms.uTime.value = elapsed;
       baseAura.ringMat.uniforms.uOpacity.value = auraVis;
       baseAura.ringPoints.rotation.y = -elapsed * 0.24;
-      baseAura.group.scale.setScalar(1.0 + state.scatterCurrent * 0.45);
+      baseAura.group.scale.setScalar((0.65 + 0.35 * baseReveal) + state.scatterCurrent * 0.45);
 
       fallingSnow.mat.uniforms.uTime.value = elapsed;
 
+      const starReveal = THREE.MathUtils.smoothstep(state.introReveal, 0.88, 1.04);
       starTopper.group.position.lerpVectors(starTopper.homePos, starTopper.scatterPos, state.scatterCurrent);
+      starTopper.group.scale.setScalar(Math.max(0.0001, starReveal * (1.0 + starFlashBoost * 0.22)));
+      starTopper.group.visible = starReveal > 0.01;
       starTopper.starMesh.rotation.y = elapsed * 0.85;
       starTopper.starMat.color.lerpColors(xmasStarColor, cnyStarColor, state.themeCurrent);
-      starTopper.starMat.emissiveIntensity = 1.25 + 0.25 * Math.sin(elapsed * 3.0);
+      starTopper.starMat.emissiveIntensity = 1.25 + 0.25 * Math.sin(elapsed * 3.0) + starFlashBoost;
       const starPulse = 1.0 + 0.06 * Math.sin(elapsed * 2.4);
-      starTopper.flareSprite.scale.setScalar(2.65 * starPulse);
+      starTopper.flareSprite.scale.setScalar((2.65 + starFlashBoost * 1.6) * starPulse);
       starTopper.rayGroup.rotation.z = elapsed * 0.35;
       starTopper.rayMat.opacity = 0;
 
       const swirlSin = Math.sin(state.scatterCurrent * Math.PI);
       for (let i = 0; i < ornaments.length; i++) {
         const o = ornaments[i];
+        const normY = THREE.MathUtils.clamp((o.homePos.y + 6.75) / 13.4, 0, 1);
+        const ornRev = THREE.MathUtils.smoothstep(state.introReveal, normY - 0.04, normY + 0.06);
+        o.mesh.visible = ornRev > 0.01;
+        if (!o.mesh.visible) continue;
+
+        if (o.isGift && o.homePos.y < -5.8) {
+          o.mesh.scale.set(o.baseScale * 1.05 * ornRev, o.baseScale * 0.88 * ornRev, o.baseScale * 1.05 * ornRev);
+        } else {
+          o.mesh.scale.setScalar(o.baseScale * ornRev);
+        }
+
         tmpVec.lerpVectors(o.homePos, o.scatterPos, state.scatterCurrent);
 
         const swirlAngle = swirlSin * (2.4 + o.homePos.y * 0.14);
@@ -2878,9 +3249,10 @@
           tmpVec.x += Math.cos(elapsed * 0.7 + card.phase) * 0.35;
           card.group.position.lerp(tmpVec, photoLerp * 0.75);
 
-          const targetScale = THREE.MathUtils.lerp(0.11, 0.24, state.scatterCurrent);
+          const targetScale = THREE.MathUtils.lerp(0.11, 0.24, state.scatterCurrent) * THREE.MathUtils.clamp(state.introReveal, 0, 1);
           const s = THREE.MathUtils.lerp(card.group.scale.x, targetScale, photoLerp);
           card.group.scale.setScalar(s);
+          card.group.visible = s > 0.005;
 
           const idleQuat = new THREE.Quaternion().setFromEuler(
             new THREE.Euler(
@@ -2915,15 +3287,6 @@
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', () => setTimeout(handleResize, 250));
-
-    setTimeout(() => {
-      showToast(
-        isMobile
-          ? '✨ 单指滑动旋转 · 双指缩放 · 双击屏幕散开星云'
-          : '✨ 移动鼠标至右下角可开启手势摄像头或上传照片 · 按 Space 散开星云',
-        3400
-      );
-    }, 900);
   </script>
 </body>
 </html>
