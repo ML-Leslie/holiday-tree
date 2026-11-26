@@ -154,7 +154,7 @@
     /* Subtle Gesture / Action Feedback Toast */
     #gesture-toast {
       position: fixed;
-      bottom: calc(var(--safe-bottom) + 92px);
+      bottom: calc(var(--safe-bottom) + 150px);
       left: 50%;
       transform: translateX(-50%) translateY(10px);
       z-index: 25;
@@ -231,22 +231,22 @@
     /* Polaroid Quick Navigation Bar (Shown only when a Polaroid is focused) */
     #polaroid-nav {
       position: fixed;
-      bottom: calc(var(--safe-bottom) + 132px);
+      bottom: calc(var(--safe-bottom) + 90px);
       left: 50%;
       transform: translateX(-50%) translateY(12px);
-      z-index: 26;
+      z-index: 35;
       display: flex;
       align-items: center;
       gap: 14px;
-      padding: 6px 12px;
+      padding: 7px 14px;
       border-radius: 999px;
-      background: rgba(12, 14, 24, 0.62);
-      border: 1px solid rgba(255, 224, 150, 0.28);
+      background: rgba(12, 14, 24, 0.72);
+      border: 1px solid rgba(255, 224, 150, 0.34);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
     #polaroid-nav.visible {
@@ -256,17 +256,18 @@
     }
 
     .pnav-btn {
-      width: 34px;
-      height: 34px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.1);
       color: #ffefc8;
-      font-size: 15px;
+      font-size: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      touch-action: manipulation;
     }
 
     .pnav-btn:active {
@@ -369,6 +370,7 @@
       gap: 10px;
       width: max-content;
       max-width: calc(100vw - 24px);
+      pointer-events: none;
     }
 
     .control-bar {
@@ -382,6 +384,7 @@
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
       box-shadow: 0 10px 32px rgba(0, 0, 0, 0.52);
+      pointer-events: auto;
     }
 
     .ctrl-btn {
@@ -2073,73 +2076,126 @@
     });
 
     /* =========================================================================
-       9. iPHONE MULTI-TOUCH (DRAG + PINCH ZOOM + DOUBLE TAP) & DESKTOP CONTROLS
+       9. iPHONE NATIVE MULTI-TOUCH (DRAG + PINCH ZOOM + DOUBLE TAP) & DESKTOP CONTROLS
        ========================================================================= */
     const domEl = renderer.domElement;
-    const activePointers = new Map();
     let lastPinchDist = 0;
     let lastTapTime = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchMoved = false;
 
-    domEl.addEventListener('pointerdown', (e) => {
-      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-      if (activePointers.size === 1) {
-        const now = performance.now();
-        if (now - lastTapTime < 280) {
-          // Double tap toggles scatter / gather
-          setScatterMode(state.scatterTarget < 0.5);
-          lastTapTime = 0;
-        } else {
-          lastTapTime = now;
-        }
-        state.isDragging = true;
-        state.lastPointerX = e.clientX;
-        state.lastPointerY = e.clientY;
-      } else if (activePointers.size === 2) {
-        state.isDragging = false;
-        const pts = Array.from(activePointers.values());
-        lastPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      }
+    // Prevent iOS Safari native pinch-to-zoom page scaling
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach((evtName) => {
+      document.addEventListener(evtName, (e) => e.preventDefault(), { passive: false });
     });
 
-    window.addEventListener('pointermove', (e) => {
-      if (!activePointers.has(e.pointerId)) return;
-      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    // Native Touch Events for iPhone (100% reliable two-finger pinch & snappy drag)
+    domEl.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        const t = e.touches[0];
+        state.isDragging = true;
+        state.lastPointerX = t.clientX;
+        state.lastPointerY = t.clientY;
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchMoved = false;
+        lastPinchDist = 0;
+      } else if (e.touches.length === 2) {
+        state.isDragging = false;
+        touchMoved = true;
+        lastPinchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }, { passive: false });
 
-      if (activePointers.size === 2) {
-        const pts = Array.from(activePointers.values());
-        const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    domEl.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
         if (lastPinchDist > 0) {
           const delta = lastPinchDist - dist;
-          state.camDistTarget = THREE.MathUtils.clamp(state.camDistTarget + delta * 0.055, 13.0, 42.0);
+          state.camDistTarget = THREE.MathUtils.clamp(state.camDistTarget + delta * 0.085, 11.0, 44.0);
         }
         lastPinchDist = dist;
         return;
       }
 
+      if (e.touches.length === 1 && state.isDragging) {
+        const t = e.touches[0];
+        const dx = t.clientX - state.lastPointerX;
+        const dy = t.clientY - state.lastPointerY;
+        if (Math.hypot(t.clientX - touchStartX, t.clientY - touchStartY) > 8) {
+          touchMoved = true;
+        }
+        state.lastPointerX = t.clientX;
+        state.lastPointerY = t.clientY;
+
+        state.camYawTarget -= dx * 0.0115;
+        state.camPitchTarget = THREE.MathUtils.clamp(state.camPitchTarget + dy * 0.0075, -0.58, 0.75);
+      }
+    }, { passive: false });
+
+    domEl.addEventListener('touchend', (e) => {
+      if (e.touches.length === 1) {
+        // Transition smoothly back to single-finger drag after releasing one finger from pinch
+        state.isDragging = true;
+        state.lastPointerX = e.touches[0].clientX;
+        state.lastPointerY = e.touches[0].clientY;
+        lastPinchDist = 0;
+        return;
+      }
+      if (e.touches.length === 0) {
+        state.isDragging = false;
+        lastPinchDist = 0;
+        if (!touchMoved) {
+          const now = performance.now();
+          if (now - lastTapTime < 300) {
+            setScatterMode(state.scatterTarget < 0.5);
+            lastTapTime = 0;
+          } else {
+            lastTapTime = now;
+          }
+        }
+      }
+    }, { passive: true });
+
+    domEl.addEventListener('touchcancel', () => {
+      state.isDragging = false;
+      lastPinchDist = 0;
+    });
+
+    // Desktop Mouse Controls
+    domEl.addEventListener('mousedown', (e) => {
+      state.isDragging = true;
+      state.lastPointerX = e.clientX;
+      state.lastPointerY = e.clientY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
       if (!state.isDragging) return;
       const dx = e.clientX - state.lastPointerX;
       const dy = e.clientY - state.lastPointerY;
       state.lastPointerX = e.clientX;
       state.lastPointerY = e.clientY;
 
-      const rotSens = isMobile ? 0.0085 : 0.0065;
-      state.camYawTarget -= dx * rotSens;
-      state.camPitchTarget = THREE.MathUtils.clamp(state.camPitchTarget + dy * 0.0055, -0.55, 0.72);
+      state.camYawTarget -= dx * 0.0068;
+      state.camPitchTarget = THREE.MathUtils.clamp(state.camPitchTarget + dy * 0.0048, -0.55, 0.72);
     });
 
-    function handlePointerEnd(e) {
-      activePointers.delete(e.pointerId);
-      if (activePointers.size < 2) lastPinchDist = 0;
-      if (activePointers.size === 0) state.isDragging = false;
-    }
-
-    window.addEventListener('pointerup', handlePointerEnd);
-    window.addEventListener('pointercancel', handlePointerEnd);
+    window.addEventListener('mouseup', () => {
+      state.isDragging = false;
+    });
 
     domEl.addEventListener('wheel', (e) => {
       e.preventDefault();
-      state.camDistTarget = THREE.MathUtils.clamp(state.camDistTarget + e.deltaY * 0.012, 12.0, 40.0);
+      state.camDistTarget = THREE.MathUtils.clamp(state.camDistTarget + e.deltaY * 0.012, 12.0, 42.0);
     }, { passive: false });
 
     window.addEventListener('keydown', (e) => {
@@ -2467,7 +2523,7 @@
         }
       }
 
-      const camLerp = 1 - Math.exp(-4.8 * dt);
+      const camLerp = 1 - Math.exp(-(state.isDragging || lastPinchDist > 0 ? 11.0 : 5.0) * dt);
       state.camYaw = THREE.MathUtils.lerp(state.camYaw, state.camYawTarget, camLerp);
       state.camPitch = THREE.MathUtils.lerp(state.camPitch, state.camPitchTarget, camLerp);
       state.camDist = THREE.MathUtils.lerp(state.camDist, state.camDistTarget, camLerp);
