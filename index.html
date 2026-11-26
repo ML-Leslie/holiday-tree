@@ -140,8 +140,8 @@
 
     .gift-stage {
       position: relative;
-      width: 210px;
-      height: 210px;
+      width: 240px;
+      height: 240px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -150,17 +150,17 @@
 
     .gift-halo {
       position: absolute;
-      inset: 12px;
+      inset: 18px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 214, 110, 0.34) 0%, rgba(255, 160, 70, 0.10) 50%, rgba(0, 0, 0, 0) 74%);
+      background: radial-gradient(circle, rgba(255, 214, 110, 0.28) 0%, rgba(255, 160, 70, 0.08) 50%, rgba(0, 0, 0, 0) 74%);
       animation: haloPulse 2.8s ease-in-out infinite;
       pointer-events: none;
     }
 
     #gift-particle-canvas {
       position: relative;
-      width: 210px;
-      height: 210px;
+      width: 240px;
+      height: 240px;
       display: block;
     }
 
@@ -175,15 +175,16 @@
     }
 
     .intro-cta {
-      padding: 11px 28px;
+      padding: 10px 38px;
       border-radius: 999px;
       border: 1px solid rgba(255, 224, 145, 0.52);
       background: rgba(255, 214, 110, 0.14);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       color: #fff4d2;
-      font-size: 14px;
-      letter-spacing: 0.12em;
+      font-size: 15px;
+      letter-spacing: 0.28em;
+      padding-left: calc(38px + 0.28em);
       box-shadow: 0 0 24px rgba(255, 200, 90, 0.24);
       animation: ctaGlow 2.4s ease-in-out infinite;
     }
@@ -623,13 +624,13 @@
   <div id="canvas-container"></div>
 
   <!-- Intro Tap-to-Open Particle Gift Overlay -->
-  <div id="intro-overlay" role="button" aria-label="轻触点亮圣诞树">
+  <div id="intro-overlay" role="button" aria-label="开启">
     <div class="gift-stage">
       <div class="gift-halo"></div>
       <canvas id="gift-particle-canvas"></canvas>
     </div>
     <div class="intro-sub">A Christmas Gift For You</div>
-    <div class="intro-cta">✨ 轻触点亮圣诞树</div>
+    <div class="intro-cta">开启</div>
   </div>
 
   <!-- Centered Glowing Title -->
@@ -1559,80 +1560,156 @@
     const introComet = createIntroComet();
 
     /* -------------------------------------------------------------------------
-       3D PARTICLE GIFT BOX CANVAS FOR INTRO OVERLAY
+       HIGH-DETAIL 3D PARTICLE GIFT BOX CANVAS FOR INTRO OVERLAY
        ------------------------------------------------------------------------- */
     const giftCanvas = document.getElementById('gift-particle-canvas');
     const giftCtx = giftCanvas.getContext('2d');
     const giftDpr = Math.min(window.devicePixelRatio || 1, 2);
-    const giftSize = 210;
+    const giftSize = 240;
     giftCanvas.width = giftSize * giftDpr;
     giftCanvas.height = giftSize * giftDpr;
     giftCtx.scale(giftDpr, giftDpr);
 
     const giftParticles = [];
     function initGiftParticles() {
-      const addP = (x, y, z, color, size, glow = 1) => {
+      const addP = (x, y, z, color, size, alpha = 0.85, isStar = false) => {
+        const len = Math.hypot(x, y, z) || 1;
+        const speed = 2.4 + Math.random() * 4.2;
         giftParticles.push({
           x, y, z,
-          vx: (Math.random() - 0.5) * 4.5,
-          vy: (Math.random() - 0.5) * 4.5 - 1.0,
-          vz: (Math.random() - 0.5) * 4.5,
-          color, size, glow,
+          vx: (x / len) * speed + (Math.random() - 0.5) * 1.8,
+          vy: (y / len) * speed - 0.6 + (Math.random() - 0.5) * 1.8,
+          vz: (z / len) * speed + (Math.random() - 0.5) * 1.8,
+          color, size, alpha, isStar,
           phase: Math.random() * Math.PI * 2,
         });
       };
 
-      const redPalette = ['#ff3b6b', '#e6194b', '#ff6b8b', '#ff2a5f'];
-      const goldPalette = ['#fff4cc', '#ffd166', '#ffb703', '#ffe599'];
-      const randRed = () => redPalette[Math.floor(Math.random() * redPalette.length)];
+      const addEdge = (x0, y0, z0, x1, y1, z1, steps, color, size = 1.25, alpha = 0.92) => {
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          addP(
+            x0 + (x1 - x0) * t + (Math.random() - 0.5) * 0.4,
+            y0 + (y1 - y0) * t + (Math.random() - 0.5) * 0.4,
+            z0 + (z1 - z0) * t + (Math.random() - 0.5) * 0.4,
+            color, size, alpha
+          );
+        }
+      };
+
+      const addBoxEdges = (hw, yTop, yBot, stepsH, stepsV, color, size) => {
+        // Top & bottom square edges
+        [yTop, yBot].forEach((y) => {
+          addEdge(-hw, y, -hw, hw, y, -hw, stepsH, color, size);
+          addEdge(hw, y, -hw, hw, y, hw, stepsH, color, size);
+          addEdge(hw, y, hw, -hw, y, hw, stepsH, color, size);
+          addEdge(-hw, y, hw, -hw, y, -hw, stepsH, color, size);
+        });
+        // 4 vertical corners
+        [[-hw, -hw], [hw, -hw], [hw, hw], [-hw, hw]].forEach(([x, z]) => {
+          addEdge(x, yTop, z, x, yBot, z, stepsV, color, size);
+        });
+      };
+
+      const rubyPalette = ['#d91e48', '#ff3b6b', '#b8143b', '#f24c73'];
+      const goldPalette = ['#fff6d6', '#ffd670', '#ffbe3d', '#ffe8a3'];
+      const randRuby = () => rubyPalette[Math.floor(Math.random() * rubyPalette.length)];
       const randGold = () => goldPalette[Math.floor(Math.random() * goldPalette.length)];
 
-      // 1. Box body faces (x,z in [-28,28], y in [-14, 34])
-      for (let i = 0; i < 230; i++) {
-        const face = i % 5;
-        let x, y, z;
-        const u = (Math.random() - 0.5) * 56;
-        const v = -14 + Math.random() * 48;
-        if (face === 0) { x = u; y = v; z = 28; }
-        else if (face === 1) { x = u; y = v; z = -28; }
-        else if (face === 2) { x = 28; y = v; z = u; }
-        else if (face === 3) { x = -28; y = v; z = u; }
-        else { x = u; y = 34; z = (Math.random() - 0.5) * 56; }
-        const isRibbon = Math.abs(x) < 6.5 || Math.abs(z) < 6.5;
-        addP(x, y, z, isRibbon ? randGold() : randRed(), isRibbon ? 2.1 : 1.75, isRibbon ? 1.35 : 0.95);
+      // 1. Crisp 3D Box Body (hw=28, y=-10..38) + Overhanging Lid (hw=31.5, y=-23..-10)
+      addBoxEdges(28, -10, 38, 16, 14, '#ff7597', 1.15);
+      addBoxEdges(31.5, -23, -10, 18, 6, '#ffe08a', 1.25);
+
+      // 2. Delicate Velvet-Ruby Surface Micro-Particles on Body & Lid
+      for (let i = 0; i < 280; i++) {
+        const face = i % 4;
+        const u = (Math.random() - 0.5) * 54;
+        const v = -9 + Math.random() * 46;
+        let x, y = v, z;
+        if (face === 0) { x = u; z = 28; }
+        else if (face === 1) { x = u; z = -28; }
+        else if (face === 2) { x = 28; z = u; }
+        else { x = -28; z = u; }
+        if (Math.abs(u) < 5.5) continue; // leave clean space for golden ribbon
+        addP(x, y, z, randRuby(), 0.9 + Math.random() * 0.45, 0.52);
       }
 
-      // 2. Box lid (slightly wider: x,z in [-31,31], y in [-26, -13])
-      for (let i = 0; i < 115; i++) {
-        const face = i % 5;
-        let x, y, z;
-        const u = (Math.random() - 0.5) * 62;
-        const v = -26 + Math.random() * 13;
-        if (face === 0) { x = u; y = v; z = 31; }
-        else if (face === 1) { x = u; y = v; z = -31; }
-        else if (face === 2) { x = 31; y = v; z = u; }
-        else if (face === 3) { x = -31; y = v; z = u; }
-        else { x = u; y = -26; z = (Math.random() - 0.5) * 62; }
-        const isRibbon = Math.abs(x) < 7.0 || Math.abs(z) < 7.0;
-        addP(x, y, z, isRibbon ? randGold() : randRed(), isRibbon ? 2.15 : 1.7, isRibbon ? 1.4 : 1.0);
+      // Lid top & side micro-fill
+      for (let i = 0; i < 120; i++) {
+        const u = (Math.random() - 0.5) * 60;
+        const w = (Math.random() - 0.5) * 60;
+        if (Math.abs(u) < 6.0 || Math.abs(w) < 6.0) continue;
+        addP(u, -23, w, randRuby(), 0.9 + Math.random() * 0.4, 0.55);
       }
 
-      // 3. Crisp glowing golden ribbon bow on top (y around -28..-46)
-      for (let i = 0; i < 110; i++) {
-        const t = (i / 110) * Math.PI * 2;
-        const loop = i % 2 === 0 ? 1 : -1;
-        const x = loop * (15 * Math.sin(t) * Math.sin(t) + 3) + (Math.random() - 0.5) * 3;
-        const y = -28 - Math.abs(18 * Math.sin(t) * Math.cos(t)) * 1.45 - Math.random() * 4;
-        const z = 10 * Math.cos(t) * (loop * 0.45) + (Math.random() - 0.5) * 4;
-        addP(x, y, z, randGold(), 2.25, 1.5);
-      }
+      // 3. Precision Satin Cross-Ribbons (vertical on all 4 sides + cross on lid top)
+      const ribHalf = 5.2;
+      // Ribbon vertical borders & fill on body + lid sides
+      [-ribHalf, 0, ribHalf].forEach((offset, idx) => {
+        const sz = idx === 1 ? 1.05 : 1.2;
+        const al = idx === 1 ? 0.72 : 0.95;
+        // Front & Back
+        addEdge(offset, -23, 31.8, offset, -10, 31.8, 6, randGold(), sz, al);
+        addEdge(offset, -10, 28.4, offset, 38, 28.4, 18, randGold(), sz, al);
+        addEdge(offset, -23, -31.8, offset, -10, -31.8, 6, randGold(), sz, al);
+        addEdge(offset, -10, -28.4, offset, 38, -28.4, 18, randGold(), sz, al);
+        // Left & Right
+        addEdge(31.8, -23, offset, 31.8, -10, offset, 6, randGold(), sz, al);
+        addEdge(28.4, -10, offset, 28.4, 38, offset, 18, randGold(), sz, al);
+        addEdge(-31.8, -23, offset, -31.8, -10, offset, 6, randGold(), sz, al);
+        addEdge(-28.4, -10, offset, -28.4, 38, offset, 18, randGold(), sz, al);
+        // Top cross strips
+        addEdge(offset, -23.4, -31.5, offset, -23.4, 31.5, 22, randGold(), sz, al);
+        addEdge(-31.5, -23.4, offset, 31.5, -23.4, offset, 22, randGold(), sz, al);
+      });
 
-      // 4. Orbiting golden stardust sparkles around the gift
-      for (let i = 0; i < 48; i++) {
+      // 4. Sculpted Luxury 4-Loop 3D Ribbon Bow + Center Knot + Flowing Tails
+      const loopAngles = [0.22, Math.PI - 0.22, Math.PI * 0.5 + 0.25, -Math.PI * 0.5 - 0.25];
+      loopAngles.forEach((rotY, idx) => {
+        const isMain = idx < 2;
+        const loopR = isMain ? 22 : 15;
+        const loopH = isMain ? 19 : 13;
+        const steps = isMain ? 44 : 30;
+        const ca = Math.cos(rotY), sa = Math.sin(rotY);
+        for (let i = 0; i <= steps; i++) {
+          const t = (i / steps) * Math.PI;
+          const lx = Math.sin(t) * loopR;
+          const ly = -24 - Math.sin(t * 2) * loopH * 0.65 - Math.sin(t) * loopH * 0.45;
+          const lz = (Math.sin(t) - 0.5) * 3.5;
+          const rx = lx * ca - lz * sa;
+          const rz = lx * sa + lz * ca;
+          addP(rx, ly, rz, randGold(), isMain ? 1.35 : 1.15, 0.96, i === Math.floor(steps * 0.5));
+          // Slight ribbon width thickness
+          addP(rx, ly + 1.8, rz, '#ffd166', 0.95, 0.68);
+        }
+      });
+
+      // Glowing center bow knot
+      for (let i = 0; i < 24; i++) {
         const a = Math.random() * Math.PI * 2;
-        const r = 46 + Math.random() * 34;
-        const y = (Math.random() - 0.5) * 86;
-        addP(Math.cos(a) * r, y, Math.sin(a) * r, randGold(), 1.35 + Math.random() * 1.2, 1.2);
+        const r = Math.random() * 4.2;
+        addP(Math.cos(a) * r, -24.5 - Math.random() * 3.5, Math.sin(a) * r, '#fff8dc', 1.35, 1.0, i < 2);
+      }
+
+      // 2 Graceful ribbon tails draping gently over the lid
+      [-1, 1].forEach((dir) => {
+        for (let i = 0; i <= 18; i++) {
+          const t = i / 18;
+          const x = dir * (4 + t * 18);
+          const y = -24.0 + t * t * 3.5 - Math.sin(t * Math.PI) * 3.2;
+          const z = dir * (6 + t * 14);
+          addP(x, y, z, randGold(), 1.1, 0.85);
+        }
+      });
+
+      // 5. Tilted Magic Orbiting Stardust Ring around the gift box
+      for (let i = 0; i < 72; i++) {
+        const a = (i / 72) * Math.PI * 2;
+        const r = 54 + (Math.random() - 0.5) * 5;
+        const rx = Math.cos(a) * r;
+        const rz = Math.sin(a) * r;
+        const ry = Math.sin(a * 1.0 + 0.5) * 14 + 6;
+        addP(rx, ry, rz, i % 3 === 0 ? '#b8e8ff' : randGold(), 0.85 + Math.random() * 0.65, 0.72, i % 18 === 0);
       }
     }
 
@@ -1648,8 +1725,8 @@
       giftCtx.clearRect(0, 0, giftSize, giftSize);
       giftCtx.globalCompositeOperation = 'lighter';
 
-      const yaw = t * 0.65;
-      const pitch = 0.34 + Math.sin(t * 1.1) * 0.06;
+      const yaw = t * 0.48;
+      const pitch = 0.36 + Math.sin(t * 1.0) * 0.05;
       const cy = Math.cos(yaw), sy = Math.sin(yaw);
       const cp = Math.cos(pitch), sp = Math.sin(pitch);
 
@@ -1659,35 +1736,51 @@
           p.x += p.vx;
           p.y += p.vy;
           p.z += p.vz;
-          p.vx *= 1.04;
-          p.vy *= 1.04;
-          p.vz *= 1.04;
+          p.vx *= 1.045;
+          p.vy *= 1.045;
+          p.vz *= 1.045;
         }
-        // 3D rotation
         const x1 = p.x * cy - p.z * sy;
         const z1 = p.x * sy + p.z * cy;
         const y2 = p.y * cp - z1 * sp;
         const z2 = p.y * sp + z1 * cp;
 
-        const fov = 230;
-        const persp = fov / (fov + z2 + 55);
+        const fov = 260;
+        const persp = fov / (fov + z2 + 65);
         const sx = giftSize * 0.5 + x1 * persp;
-        const syPos = giftSize * 0.54 + y2 * persp;
+        const syPos = giftSize * 0.52 + y2 * persp;
 
-        const twinkle = 0.58 + 0.42 * Math.sin(t * 3.4 + p.phase * 6.0);
-        const r = Math.max(0.6, p.size * persp * (0.85 + 0.3 * twinkle));
+        const twinkle = 0.62 + 0.38 * Math.sin(t * 3.2 + p.phase * 6.0);
+        const depthFade = Math.max(0.32, Math.min(1.0, (persp - 0.55) * 1.8));
+        const r = Math.max(0.45, p.size * persp * (0.88 + 0.24 * twinkle));
 
-        giftCtx.globalAlpha = Math.min(1, twinkle * 0.85 * p.glow);
+        // Soft outer glow
+        giftCtx.globalAlpha = p.alpha * twinkle * depthFade * 0.42;
         giftCtx.fillStyle = p.color;
         giftCtx.beginPath();
-        giftCtx.arc(sx, syPos, r * 1.85, 0, Math.PI * 2);
+        giftCtx.arc(sx, syPos, r * 2.1, 0, Math.PI * 2);
         giftCtx.fill();
 
-        giftCtx.globalAlpha = Math.min(1, twinkle * 0.95);
-        giftCtx.fillStyle = '#ffffff';
+        // Crisp luminous core
+        giftCtx.globalAlpha = Math.min(1, p.alpha * twinkle * depthFade);
+        giftCtx.fillStyle = '#fffdf5';
         giftCtx.beginPath();
-        giftCtx.arc(sx, syPos, r * 0.65, 0, Math.PI * 2);
+        giftCtx.arc(sx, syPos, r * 0.72, 0, Math.PI * 2);
         giftCtx.fill();
+
+        // Delicate 4-point sparkle flare on key highlight particles
+        if (p.isStar && twinkle > 0.78) {
+          const fl = r * 4.5 * twinkle;
+          giftCtx.globalAlpha = 0.65 * twinkle;
+          giftCtx.strokeStyle = '#fff5cc';
+          giftCtx.lineWidth = 0.8;
+          giftCtx.beginPath();
+          giftCtx.moveTo(sx - fl, syPos);
+          giftCtx.lineTo(sx + fl, syPos);
+          giftCtx.moveTo(sx, syPos - fl);
+          giftCtx.lineTo(sx, syPos + fl);
+          giftCtx.stroke();
+        }
       }
     }
     requestAnimationFrame(renderGiftParticles);
